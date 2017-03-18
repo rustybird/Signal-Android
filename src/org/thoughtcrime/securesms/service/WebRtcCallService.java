@@ -748,7 +748,7 @@ public class WebRtcCallService extends Service implements InjectableType, PeerCo
       else                   this.lockManager.updatePhoneState(LockManager.PhoneState.IN_CALL);
     }
 
-    if (localVideoEnabled && !audioManager.isSpeakerphoneOn() && !audioManager.isBluetoothScoOn()) {
+    if (localVideoEnabled && !audioManager.isSpeakerphoneOn() && !audioManager.isWiredHeadsetOn() && !audioManager.isBluetoothScoOn()) {
       audioManager.setSpeakerphoneOn(true);
     }
 
