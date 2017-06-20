@@ -10,6 +10,8 @@ import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.text.TextUtils;
 import android.util.Log;
 
+import org.thoughtcrime.securesms.database.DatabaseFactory;
+import org.thoughtcrime.securesms.util.Util;
 import org.whispersystems.signalservice.api.push.ContactTokenDetails;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
@@ -174,7 +176,7 @@ public class TextSecureDirectory {
     db.replace(TABLE_NAME, null, values);
   }
 
-  public void setNumbers(List<ContactTokenDetails> activeTokens, Collection<String> inactiveTokens) {
+  public void setNumbers(List<ContactTokenDetails> activeTokens, Collection<String> inactiveTokens, boolean deleteAllStale) {
     long timestamp    = System.currentTimeMillis();
     SQLiteDatabase db = databaseHelper.getWritableDatabase();
     db.beginTransaction();
@@ -198,6 +200,40 @@ public class TextSecureDirectory {
         values.put(REGISTERED, 0);
         values.put(TIMESTAMP, timestamp);
         db.replace(TABLE_NAME, null, values);
+      }
+
+      final String whereStale = TIMESTAMP + " < " + timestamp;
+
+      if (deleteAllStale) {
+        db.delete(TABLE_NAME, whereStale, null);
+      } else { // delete only stale numbers that aren't in the messages database
+        final List<String> staleNumbersToDelete = new ArrayList<>();
+        final  Set<String> messagesNumbers      = DatabaseFactory.getSmsDatabase(context)
+                                                  .getAddresses();
+
+        Cursor cursor = db.query(TABLE_NAME, new String[]{NUMBER}, whereStale,
+                                 null, null, null, null);
+
+        while (cursor.moveToNext()) {
+          String staleNumber = cursor.getString(0);
+          String canonicalStaleNumber;
+
+          try {
+            canonicalStaleNumber = Util.canonicalizeNumber(context, staleNumber);
+          } catch (InvalidNumberException e) {
+            canonicalStaleNumber = staleNumber;
+          }
+
+          if (!messagesNumbers.contains(canonicalStaleNumber)) {
+            staleNumbersToDelete.add(staleNumber);
+          }
+        }
+
+        cursor.close();
+
+        for (String s : staleNumbersToDelete) {
+          db.delete(TABLE_NAME, NUMBER + " = ?", new String[]{s});
+        }
       }
 
       db.setTransactionSuccessful();

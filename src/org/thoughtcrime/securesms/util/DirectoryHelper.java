@@ -76,9 +76,18 @@ public class DirectoryHelper {
   public static void refreshDirectory(@NonNull Context context, @Nullable MasterSecret masterSecret)
       throws IOException
   {
+    refreshDirectory(context, masterSecret, false);
+  }
+
+  public static void refreshDirectory(@NonNull Context context,
+                                      @Nullable MasterSecret masterSecret,
+                                      boolean deleteAllStale)
+      throws IOException
+  {
     RefreshResult result = refreshDirectory(context,
                                             AccountManagerFactory.createManager(context),
-                                            TextSecurePreferences.getLocalNumber(context));
+                                            TextSecurePreferences.getLocalNumber(context),
+                                            deleteAllStale);
 
     if (!result.getNewUsers().isEmpty() && TextSecurePreferences.isMultiDevice(context)) {
       ApplicationContext.getInstance(context)
@@ -91,9 +100,19 @@ public class DirectoryHelper {
     }
   }
 
+
   public static @NonNull RefreshResult refreshDirectory(@NonNull Context context,
                                                         @NonNull SignalServiceAccountManager accountManager,
                                                         @NonNull String localNumber)
+      throws IOException
+  {
+    return refreshDirectory(context, accountManager, localNumber, false);
+  }
+
+  public static @NonNull RefreshResult refreshDirectory(@NonNull Context context,
+                                                        @NonNull SignalServiceAccountManager accountManager,
+                                                        @NonNull String localNumber,
+                                                        boolean deleteAllStale)
       throws IOException
   {
     TextSecureDirectory       directory              = TextSecureDirectory.getInstance(context);
@@ -108,7 +127,7 @@ public class DirectoryHelper {
         activeToken.setNumber(activeToken.getNumber());
       }
 
-      directory.setNumbers(activeTokens, eligibleContactNumbers);
+      directory.setNumbers(activeTokens, eligibleContactNumbers, deleteAllStale);
       return updateContactsDatabase(context, localNumber, activeTokens, true);
     }
 

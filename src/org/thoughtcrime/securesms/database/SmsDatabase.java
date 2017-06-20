@@ -49,6 +49,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -162,6 +163,32 @@ public class SmsDatabase extends MessagingDatabase {
         cursor.close();
     }
   }
+
+  public Set<String> getAddresses() {
+    Set<String> numbers = new HashSet<>();
+    String where        = " WHERE " + MmsSmsColumns.ADDRESS + " IS NOT NULL";
+    String smsAddresses = "SELECT " + MmsSmsColumns.ADDRESS + " FROM " + SmsDatabase.TABLE_NAME + where;
+    String mmsAddresses = "SELECT " + MmsSmsColumns.ADDRESS + " FROM " + MmsDatabase.TABLE_NAME + where;
+    Cursor cursor       = databaseHelper.getReadableDatabase()
+                                        .rawQuery(smsAddresses + " UNION " + mmsAddresses, null);
+
+    while (cursor.moveToNext()) {
+      String number = cursor.getString(0);
+      String canonicalNumber;
+
+      try {
+        canonicalNumber = canonicalizeNumber(context, number);
+      } catch (InvalidNumberException e) {
+        canonicalNumber = number;
+      }
+
+      numbers.add(canonicalNumber);
+    }
+
+    cursor.close();
+    return numbers;
+  }
+
 
   public int getMessageCountForThread(long threadId) {
     SQLiteDatabase db = databaseHelper.getReadableDatabase();
