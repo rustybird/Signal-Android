@@ -32,6 +32,7 @@ import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -96,7 +97,9 @@ public class DirectoryHelper {
       throws IOException
   {
     TextSecureDirectory       directory              = TextSecureDirectory.getInstance(context);
-    Set<String>               eligibleContactNumbers = directory.getPushEligibleContactNumbers(localNumber);
+    Set<String>               eligibleContactNumbers = TextSecurePreferences.avoidContactsIntersection(context)
+                                                       ? new HashSet<String>()
+                                                       : directory.getPushEligibleContactNumbers(localNumber);
     List<ContactTokenDetails> activeTokens           = accountManager.getContacts(eligibleContactNumbers);
 
     if (activeTokens != null) {

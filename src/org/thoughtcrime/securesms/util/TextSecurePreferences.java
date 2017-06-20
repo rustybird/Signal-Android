@@ -251,6 +251,10 @@ public class TextSecurePreferences {
     }
   }
 
+  public static boolean avoidContactsIntersection(Context context) {
+    return !isNewContactsNotificationEnabled(context);
+  }
+
   public static int getLocalRegistrationId(Context context) {
     return getIntegerPreference(context, LOCAL_REGISTRATION_ID_PREF, 0);
   }

@@ -67,7 +67,8 @@ public abstract class ContactSelectionActivity extends PassphraseRequiredActionB
     this.masterSecret = masterSecret;
     if (!getIntent().hasExtra(ContactSelectionListFragment.DISPLAY_MODE)) {
       getIntent().putExtra(ContactSelectionListFragment.DISPLAY_MODE,
-                           TextSecurePreferences.isSmsEnabled(this)
+                           (TextSecurePreferences.isSmsEnabled(this) ||
+                            TextSecurePreferences.avoidContactsIntersection(this))
                            ? ContactSelectionListFragment.DISPLAY_MODE_ALL
                            : ContactSelectionListFragment.DISPLAY_MODE_PUSH_ONLY);
     }
